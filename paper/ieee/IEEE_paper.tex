@@ -55,6 +55,7 @@ A systematic grid search over distillation hyperparameters $\alpha$ and $T$ reve
 Our best Hybrid CNN-Transformer student (26.3\,M, $4.5\times$ compression) retains \textbf{96.5\%} of the teacher's accuracy (93.31\% vs.\ 96.71\%), achieves \textbf{2.7$\times$} CPU speedup, and \emph{outperforms the teacher} on cross-species mouse promoters (82.61\% vs.\ 79.66\%).
 Notably, a 4-Layer Pure Transformer trained from scratch with KD reaches 93.01\% accuracy and 82.24\% on mouse data---also surpassing the teacher---demonstrating that KD can transfer knowledge effectively even without pretrained initialization.
 We further show that data augmentation is critical for effective distillation on multiclass tasks, converting KD from harmful ($-1.4\%$) to beneficial ($+1.5\%$).
+Code and notebooks are available at \url{https://github.com/Rahat463/CSE_472_Machine_Learning_Project}.
 \end{abstract}
 
 \begin{IEEEkeywords}
