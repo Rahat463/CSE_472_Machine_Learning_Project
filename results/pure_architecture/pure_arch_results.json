@@ -1,0 +1,74 @@
+{
+  "4L-Pure-Transformer_baseline": {
+    "architecture": "4L-Pure-Transformer",
+    "mode": "baseline",
+    "accuracy": 0.9197635135135135,
+    "f1": 0.917834284725826,
+    "precision": 0.9404466501240695,
+    "recall": 0.8962837837837838,
+    "loss": 0.5171493291854858,
+    "params": 32485634,
+    "compression": 3.6037493373224607,
+    "train_time_min": 98.1
+  },
+  "4L-Pure-Transformer_kd": {
+    "architecture": "4L-Pure-Transformer",
+    "mode": "kd",
+    "accuracy": 0.9300675675675676,
+    "f1": 0.9284232365145229,
+    "precision": 0.9507790368271954,
+    "recall": 0.9070945945945946,
+    "loss": 0.12414239346981049,
+    "params": 32485634,
+    "compression": 3.6037493373224607,
+    "train_time_min": 195.8
+  },
+  "4L-Pure-CNN_baseline": {
+    "architecture": "4L-Pure-CNN",
+    "mode": "baseline",
+    "accuracy": 0.8383445945945946,
+    "f1": 0.836939853467371,
+    "precision": 0.8442763836369886,
+    "recall": 0.8297297297297297,
+    "loss": 0.4203951060771942,
+    "params": 3149314,
+    "compression": 37.17320089390896,
+    "train_time_min": 9.3
+  },
+  "4L-Pure-CNN_kd": {
+    "architecture": "4L-Pure-CNN",
+    "mode": "kd",
+    "accuracy": 0.8483108108108108,
+    "f1": 0.8440972222222223,
+    "precision": 0.8682142857142857,
+    "recall": 0.8212837837837837,
+    "loss": 0.3223477303981781,
+    "params": 3149314,
+    "compression": 37.17320089390896,
+    "train_time_min": 107.5
+  },
+  "Hybrid-Pure-3T1C_baseline": {
+    "architecture": "Hybrid-Pure-3T1C",
+    "mode": "baseline",
+    "accuracy": 0.9184121621621621,
+    "f1": 0.9173652694610779,
+    "precision": 0.9292894280762565,
+    "recall": 0.9057432432432433,
+    "loss": 0.2818380892276764,
+    "params": 26281346,
+    "compression": 4.45449338858063,
+    "train_time_min": 82.7
+  },
+  "Hybrid-Pure-3T1C_kd": {
+    "architecture": "Hybrid-Pure-3T1C",
+    "mode": "kd",
+    "accuracy": 0.9285472972972973,
+    "f1": 0.9275064267352185,
+    "precision": 0.9412173913043478,
+    "recall": 0.9141891891891892,
+    "loss": 0.12275505810976028,
+    "params": 26281346,
+    "compression": 4.45449338858063,
+    "train_time_min": 181.1
+  }
+}
