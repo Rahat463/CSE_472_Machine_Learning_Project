@@ -4,7 +4,7 @@
 % ============================================================
 \documentclass{article}
 
-\usepackage[final]{neurips_2024}
+\usepackage[preprint]{neurips_2024}
 
 % ---- packages ----
 \usepackage{amsmath, amssymb}
@@ -146,7 +146,7 @@ where $\alpha \in [0,1]$ controls the trade-off. Higher $T$ produces softer dist
 
 % Hard loss and ground truth (below soft loss, right side)
 \node[lossblock, fill=orange!20, right=1.2cm of slogits] (hardloss) {Cross-Entropy\\(Hard Loss)};
-\node[block, fill=gray!10, above=0.5cm of hardloss] (gt) {Ground Truth $y$};
+\node[block, fill=gray!10, above right=0.5cm and 0.5cm of hardloss] (gt) {Ground Truth $y$};
 
 % Row 5: Total loss (top center)
 \node[block, fill=purple!12, above=0.7cm of softloss] (total) {$\mathcal{L}_{\text{KD}} = \alpha \mathcal{L}_{\text{hard}} + (1\!-\!\alpha)\, T^2 \mathcal{L}_{\text{soft}}$};
@@ -168,16 +168,17 @@ where $\alpha \in [0,1]$ controls the trade-off. Higher $T$ produces softer dist
 \draw[arrow] (tsoft) -- (softloss);
 \draw[arrow] (ssoft) -- (softloss);
 
-% Hard loss connections
-\draw[arrow] (student.east) -- (hardloss.west);
+% Hard loss connections: Student and Ground Truth -> Cross-Entropy
+\draw[arrow] (student.north east) -- (hardloss.south west);
 \draw[arrow] (gt) -- (hardloss);
 
 % Losses -> total
 \draw[arrow] (softloss) -- (total);
-\draw[arrow] (hardloss.north) |- ([yshift=-0.2cm]total.east) -- (total.east);
+\draw[arrow] (hardloss.north) |- (total.east);
 
 % Backprop
-\draw[dasharrow, blue!60] (total.west) -- ++(-0.6,0) |- (student.north) node[pos=0.25, left, font=\scriptsize, text=blue!60] {backprop};
+\draw[dasharrow, blue!60] (total.south west) -- ++(-0.5,0) coordinate (bpcorner) |- ([yshift=0.3cm]student.north) -- (student.north);
+\node[font=\scriptsize, text=blue!60, left] at ([yshift=-1.5cm]bpcorner) {Backprop};
 \end{tikzpicture}
 \caption{Knowledge distillation pipeline. The frozen teacher produces soft labels $p_T^{(T)}$; the student matches both soft labels (KL divergence) and hard labels (cross-entropy). Only the student receives gradients.}
 \label{fig:kd_flow}
@@ -419,23 +420,8 @@ Hybrid KD           & 91.80 & .917 & 23.5M  & 57.2m \\
 Table~\ref{tab:multiclass_aug} further compares KD effectiveness under two data regimes.
 Without augmentation, KD \emph{improves} the Hybrid by 3.8 points but \emph{degrades} the 6-Layer by 1.4 points.
 With augmentation, KD becomes beneficial for the 6-Layer ($+0.3\%$) and continues to help the Hybrid ($+1.5\%$).
-Fig.~\ref{fig:multiclass_aug} visualizes the accuracy and model-size trade-offs for the augmented multiclass setting.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{multiclass_1.png}
-\caption{Multiclass (5-class) with augmentation. \textbf{Left:} Baseline vs.\ KD accuracy. \textbf{Center:} Model sizes. \textbf{Right:} KD accuracy gain over baseline.}
-\label{fig:multiclass_aug}
-\end{figure}
-
-Fig.~\ref{fig:dark_knowledge} illustrates why soft labels carry richer signal than hard labels. At temperature $T\!=\!5.0$, the teacher's output distribution reveals inter-class similarities---e.g., Splice~A samples show nonzero probability for other splice classes---providing the student with ``dark knowledge'' that hard one-hot labels cannot convey~\cite{hinton2015distilling}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{multiclass_2.png}
-\caption{Teacher soft vs.\ hard probability distributions on 5-class samples. Hard labels ($T\!=\!1$, blue) are near one-hot; soft labels ($T\!=\!5$, red) reveal inter-class structure that guides the student.}
-\label{fig:dark_knowledge}
-\end{figure}
+Soft labels at $T\!=\!5.0$ reveal inter-class similarities---e.g., Splice~A samples show nonzero probability for other splice classes---providing ``dark knowledge'' that hard one-hot labels cannot convey~\cite{hinton2015distilling}.
 
 \begin{table}[t]
 \centering
@@ -491,13 +477,6 @@ Remarkably, the pure transformer---trained entirely from scratch---nearly matche
 
 On plant promoters (different kingdom), all models perform near chance ($\sim$46--48\%), which is expected given the vast evolutionary distance and divergent regulatory grammar between mammals and plants.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{pure_arch_gen_speed.png}
-\caption{4L-Pure-Transformer (KD) evaluation. \textbf{Left:} Cross-species accuracy (teacher vs.\ student). \textbf{Center:} GPU speed. \textbf{Right:} CPU speed.}
-\label{fig:gen_speed}
-\end{figure}
-
 \subsection{Inference Speed Benchmark}
 
 Table~\ref{tab:speed} reports inference latency measured on 1,000 sequences with 3 warmup passes and \texttt{torch.cuda.synchronize()} for GPU timing.
@@ -523,40 +502,13 @@ The Hybrid student is $1.71\times$ faster on GPU and $2.70\times$ faster on CPU,
 \section{Discussion}
 \label{sec:discussion}
 
-\subsection{Why KD Helps the Hybrid but Hurts the 6-Layer}
+\textbf{Why KD helps the Hybrid but hurts the 6-Layer.}\quad Without augmentation, KD degrades the 6-Layer by 1.4\% while boosting the Hybrid by 3.8\%. Three factors explain this: (1)~\emph{teacher overconfidence}---on the small 13.6K dataset, soft-label entropy is only 1.515\,bits, adding noise rather than signal~\cite{hinton2015distilling, li2023curriculum}; (2)~\emph{capacity gap}---the 6-Layer (46.7\,M) is close enough to the teacher (117\,M) to overfit noisy soft labels, while the Hybrid's smaller capacity acts as implicit regularization~\cite{mirzadeh2020improved}; (3)~\emph{inductive bias}---the Hybrid's CNN kernel (size~9) constrains the student toward biologically relevant motifs (TATA box $\sim$10\,bp).
 
-Without augmentation, KD degrades the 6-Layer student by 1.4\% while boosting the Hybrid by 3.8\%. We identify three factors:
+\textbf{Data augmentation as teacher regularization.}\quad With augmentation, teacher accuracy drops from 96.6\% to 91.8\%, and KD becomes beneficial even for the 6-Layer ($+0.3\%$). Augmentation prevents overfitting and produces softer, more informative distributions~\cite{tang2020understanding}. We recommend \emph{always augmenting before distillation} on datasets with $<$20K samples.
 
-\textbf{(1) Teacher overconfidence.}\quad
-On the small 13.6K multiclass dataset, the teacher's training loss drops to 0.028, indicating memorization. Average soft-label entropy is only 1.515\,bits (vs.\ $\log_2 5 = 2.322$ max), meaning soft labels are near-one-hot and add noise rather than useful signal~\cite{hinton2015distilling, li2023curriculum}.
+\textbf{Cross-species generalization.}\quad Both students outperform the teacher on mouse promoters (82.61\% and 82.24\% vs.\ 79.66\%), suggesting distillation acts as a regularizer against species-specific overfitting. Notably, the pure transformer---with no pretrained weights---nearly matches the DNABERT-2-initialized Hybrid on mouse data, implying the generalization benefit comes from distillation itself. Near-random plant performance confirms mammalian features do not transfer across kingdoms.
 
-\textbf{(2) Capacity gap.}\quad
-The teacher (117\,M) is only $2.5\times$ larger than the 6-Layer student (46.7\,M) but $6.1\times$ larger than the Hybrid (19.2\,M). Counterintuitively, the \emph{smaller} gap hurts more: the 6-Layer has enough capacity to overfit to noisy soft labels, while the Hybrid's limited capacity acts as implicit regularization, selectively absorbing only the most useful dark knowledge~\cite{mirzadeh2020improved}.
-
-\textbf{(3) Inductive bias.}\quad
-The Hybrid's CNN head with kernel size 9 provides a strong structural prior for DNA motifs (TATA box $\sim$10\,bp, CAAT box $\sim$8\,bp). This constrains the student to learn biologically relevant features, making it more robust to noisy teacher signals.
-
-\subsection{Data Augmentation as Teacher Regularization}
-
-With augmentation, teacher accuracy drops from 96.6\% to 91.8\%, and KD becomes beneficial even for the 6-Layer student ($+0.3\%$). Augmentation prevents teacher overfitting, producing softer, more informative distributions. This aligns with Tang et al.~\cite{tang2020understanding}, who showed that teacher calibration is a key determinant of KD success. We recommend \emph{always augmenting before distillation} on datasets with $<$20K training samples.
-
-\subsection{Cross-Species Generalization}
-
-Both distilled students outperform the teacher on mouse promoters (82.61\% and 82.24\% vs.\ 79.66\%) despite lower human accuracy, suggesting that distillation acts as a \emph{regularizer against species-specific overfitting}. The teacher memorizes human-specific promoter patterns, while the students' constrained capacity forces them to learn more generalizable motifs shared across mammals.
-
-That the pure transformer---with no pretrained weights---nearly matches the DNABERT-2-initialized Hybrid on mouse data is particularly noteworthy: it implies the generalization benefit comes from the distillation process itself, not from the teacher's pretrained representations being inherited through weight initialization.
-
-The near-random performance on plant promoters for all models confirms that mammalian promoter features do not transfer across kingdoms, consistent with the fundamental differences in plant vs.\ animal transcriptional regulation.
-
-\subsection{Pure Architectures: KD Without Pretraining}
-
-The consistent $\sim$1\% KD gain across all three pure architectures (Table~\ref{tab:pure_arch}) demonstrates that KD is effective even without pretrained initialization, though the absolute improvement is smaller than the $\sim$3.8\% gains seen for pretrained Hybrids on multiclass tasks. The 4L-Pure-Transformer's 93.01\% accuracy is only 0.30 points below the DNABERT-2-initialized Hybrid (93.31\%), suggesting that for binary promoter classification, the teacher's soft-label guidance can largely compensate for the lack of pretrained weights.
-
-The 4L-Pure-CNN's poor accuracy (84.83\%) confirms that self-attention is essential for capturing long-range dependencies in promoter sequences, while the Hybrid-Pure-3T1C (92.85\%) benefits from both local (CNN) and global (transformer) pattern detection.
-
-\subsection{Practical Deployment Considerations}
-
-The Hybrid student's $2.7\times$ CPU speedup and 105\,MB model size make it deployable on standard laptops---processing 1,000 sequences in $\sim$73 seconds on CPU vs.\ $\sim$197 seconds for the teacher. For laboratories without GPU access, this represents a meaningful practical improvement.
+\textbf{Practical deployment.}\quad The Hybrid's $2.7\times$ CPU speedup and 105\,MB size make it deployable on standard laptops, processing 1,000 sequences in $\sim$73\,s vs.\ $\sim$197\,s for the teacher.
 
 % ============================================================
 \section{Conclusion}

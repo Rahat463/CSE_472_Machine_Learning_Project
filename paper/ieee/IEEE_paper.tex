@@ -148,7 +148,7 @@ where $\alpha \in [0,1]$ controls the trade-off. Higher $T$ produces softer dist
 
 % Hard loss and ground truth (below soft loss, right side)
 \node[lossblock, fill=orange!20, right=1.2cm of slogits] (hardloss) {Cross-Entropy\\(Hard Loss)};
-\node[block, fill=gray!10, above=0.5cm of hardloss] (gt) {Ground Truth $y$};
+\node[block, fill=gray!10, above right=0.5cm and 0.5cm of hardloss] (gt) {Ground Truth $y$};
 
 % Row 5: Total loss (top center)
 \node[block, fill=purple!12, above=0.7cm of softloss] (total) {$\mathcal{L}_{\text{KD}} = \alpha \mathcal{L}_{\text{hard}} + (1\!-\!\alpha)\, T^2 \mathcal{L}_{\text{soft}}$};
@@ -170,16 +170,17 @@ where $\alpha \in [0,1]$ controls the trade-off. Higher $T$ produces softer dist
 \draw[arrow] (tsoft) -- (softloss);
 \draw[arrow] (ssoft) -- (softloss);
 
-% Hard loss connections
-\draw[arrow] (student.east) -- (hardloss.west);
+% Hard loss connections: Student and Ground Truth -> Cross-Entropy
+\draw[arrow] (student.north east) -- (hardloss.south west);
 \draw[arrow] (gt) -- (hardloss);
 
 % Losses -> total
 \draw[arrow] (softloss) -- (total);
-\draw[arrow] (hardloss.north) |- ([yshift=-0.2cm]total.east) -- (total.east);
+\draw[arrow] (hardloss.north) |- (total.east);
 
 % Backprop
-\draw[dasharrow, blue!60] (total.west) -- ++(-0.6,0) |- (student.north) node[pos=0.25, left, font=\scriptsize, text=blue!60] {backprop};
+\draw[dasharrow, blue!60] (total.south west) -- ++(-0.5,0) coordinate (bpcorner) |- ([yshift=0.3cm]student.north) -- (student.north);
+\node[font=\scriptsize, text=blue!60, left] at ([yshift=-1.5cm]bpcorner) {Backprop};
 \end{tikzpicture}%
 }
 \caption{Knowledge distillation pipeline. The frozen teacher produces soft labels $p_T^{(T)}$; the student matches both soft labels (KL divergence) and hard labels (cross-entropy). Only the student receives gradients.}
